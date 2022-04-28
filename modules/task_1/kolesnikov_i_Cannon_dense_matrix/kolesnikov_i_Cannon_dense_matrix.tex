@@ -1,0 +1,1242 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdftex]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeОтчет по лабораторной работе} \\
+\end{center}
+\begin{center}
+\textbf{\Large«Умножение плотных матриц. Элементы типа double. Блочная схема, алгоритм Кэннона.»} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнила:} \\ студент группы 381906-3 \\ Колесников И. В.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ доцент кафедры МОСТ, \\ кандидат технических наук \\ Сысоев А. В.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2022 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par 
+Блочная матрица А — представление матрицы, при котором она рассекается вертикальными и горизонтальными линиями на прямоугольные части — блоки. Элементами блочной матрицы A являются матрицы $A_{ij}$ размеров $m_i\times n_j, i=1,2,\ldots,p, j=1,2,\ldots,q$, причем: $m_1+m_2+\ldots+m_p=m и n_1+n_2+\ldots+n_q=n.$
+
+Операции с блочными матрицами выполняются по тем же правилам, что и с числовыми матрицами. Если числовые матрицы A и B равных размеров одинаково разбиты на блоки A=\begin{pmatrix}A_{ij}\end{pmatrix} и B=\begin{pmatrix}B_{ij}\end{pmatrix}, то их сумму C=A+B можно аналогичным образом разбить на блоки C=\begin{pmatrix}C_{ij}\end{pmatrix}, причем для каждого блока $C_{ij}=A_{ij}+B_{ij}$. Если блочную матрицу A=\begin{pmatrix}A_{ij}\end{pmatrix} умножить на число $\lambda$, то получим матрицу $\lambda A=A\lambda=\begin{pmatrix}\lambda A_{ij}\end{pmatrix}$. 
+
+Алгоритм Кэннона — это алгоритм, предотвращающий обмен данными, который превращает каждую входную матрицу в блочную матрицу, элементами которой являются подматрицы. Затем используется наивный алгоритм над блоками матриц, вычисляющий произведение подматриц полностью в быстрой памяти. 
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par В данной лабораторной работе необходимо реализовать последовательную и параллельные версии алгоритма блочного умножения матриц с помощью алгоритма Кэннона. Для проверки работы на ошибки необходимо реализовать ряд тестов с использованием Google C++ Testing Framework. Затем нужно провести
+вычислительный эксперименты для сравнения времени работы алгоритмов и сделать выводы об эффективности реализованных алгоритмов. Параллельные алгоритмы будут реализованы с помощью технологий OpenMP, TBB.
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Начальные шаги алгоритма Кэннона:
+\begin{enumerate}
+\item В каждую подзадачу (i,j) передаются блоки Aij, Bij ;
+\item Для каждой строки i решетки подзадач блоки матрицы A сдвигаются на (i-1) позиций влево;
+\item Для каждого столбца j решетки подзадач блоки матрицы B сдвигаются на (j-1) позиций вверх.
+\end{enumerate}
+\par Основные шаги алгоритма Кэннона:
+\begin{enumerate}
+\item Перемножить блоки Aij, Bij;
+\item Прибавить к произведение текущее значение результирующего блока;
+\item Для каждой строки i решетки подзадач блоки матрицы A сдвигаются на (i-1) позиций влево;
+\item Для каждого столбца j решетки подзадач блоки матрицы B сдвигаются на (j-1) позиций вверх;
+\end{enumerate}
+Результирующая матрица собирается из полученных результирующих блоков.
+\newpage
+
+% Описание схемы распараллеливания
+\section*{Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par Последовательный алгоритм отличается от обычного умножения матриц только тем, что делит матрицы на блоки. Соответственно, было бы логично разделить выполнение программы между потоками так, чтобы каждый поток выполнял умножение определенного числа блоков.
+Однако, сложность в том, что размеры блоков чаще всего не фиксированные (например, размер блока 4 будет неэффективным для матрицы 256х256). Это означает, что определить число потоков не менее важно, чем распределить задачи (число итераций цикла) между ними.
+\par Таким образом, задача сводится к верному распределению числа потоков, зная размер блока. Технология OpenMP позволяет задавать число потоков самостоятельно и распределять между ними задачи. TBB сам определяет число потоков, тем самым упрощая процесс распараллеливания. 
+
+\newpage
+
+% Описание программной реализации
+\section*{Описание программной реализации}
+\addcontentsline{toc}{section}{Описание программной реализации}
+Программа содержит заголовочный файл matrix.h и двух файлов исходного кода matrix.cpp и main.cpp.
+\par В заголовочном файле находится описание класса Matrix, а также  прототипы функций для последовательного и параллельных алгоритмов Кэннона.
+\par Функция для заполнения матрицы:
+\begin{lstlisting}
+void generateMatrix();
+\end{lstlisting}
+\par Функция с реализацией алгоритма умножения матриц "наивным" способом:
+\begin{lstlisting}
+std::vector< std::vector<double>> multiplyByMatrix(Matrix matrix);
+\end{lstlisting}
+\begin{lstlisting}
+int getYmin(int* image, int height, int width);
+\end{lstlisting}
+\par Функция с реализацией последовательного алгоритма Кэннона:
+\begin{lstlisting}
+int* getSequentialOperations(int* image, int height, int width, int y_max, int y_min);
+\end{lstlisting}
+\par Функция с реализацией параллельного алгоритма (OpenMP):
+\begin{lstlisting}
+int* getParallelOperationsOMP(int* image, int height, int width, int y_max, int y_min);
+\end{lstlisting}
+\par Функция с реализацией параллельного алгоритма (TBB):
+\begin{lstlisting}
+int* getParallelOperationsTBB(int* image, int height, int width, int y_max, int y_min);
+\end{lstlisting}
+\par Функция с реализацией сдвига матрицы влево:
+\begin{lstlisting}
+void shiftLeft(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count, size_t block_size);
+\end{lstlisting}
+\par Функция с реализацией сдвига матрицы вверх:
+\begin{lstlisting}
+void shiftUp(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count, size_t block_size);
+\end{lstlisting}
+\par Функция с реализацией умножения блоков:
+\begin{lstlisting}
+void mutiplyByBlock(std::vector< std::vector<double>> block1, std::vector< std::vector<double>> block2, std::vector< std::vector<double>> *res_block, size_t shift_l, size_t shift_r, size_t block_size);
+\end{lstlisting}
+\par В файле исходного кода matrix.cpp содержится реализация функций, объявленных в заголовочном файле. В файле исходного кода main.cpp содержатся тесты для проверки корректности программы.
+\newpage
+
+% Подтверждение корректности
+\section*{Подтверждение корректности}
+\addcontentsline{toc}{section}{Подтверждение корректности}
+Для подтверждения корректности работы данной программы с помощью Google C++ Testing Framework мной было разработано 5 тестов: каждый из них, так или иначе, проверяет работоспособность программы при определенных, изначально заданных условиях. Проверяется как последовательный алгоритм, так и параллельные. Так как задача заключается в умножении матриц, логично проверять результаты вычисления итоговой матрицы. Тесты организуют именно это сравнение на различных входных данных для полноты эксперимента.
+
+\par Успешное прохождение всех тестов подтверждает корректность работы программы.
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+Вычислительные эксперименты для оценки эффективности работы параллельных алгоритмов проводились на ПК со следующими характеристиками:
+\begin{itemize}
+\item Процессор: AMD Ryzen 3 2200G with Radeon Vega Graphics 3.50 GHz, количество ядер - 4;
+\item Оперативная память: 16 ГБ (DDR4), 3200 МГц;
+\item Операционная система: Windows 10 Home.
+\end{itemize}
+
+\par Вычисления производились на 10 потоках. Размер блока был выбран как размер матрицы, деленный на 4 для наглядной демонстрации.
+
+\par Результаты экспериментов представлены в Таблице 1.
+
+\begin{table}[!h]
+\caption{Результаты вычислительных экспериментов}
+\centering
+\begin{tabular}{| p{3cm} | p{3cm} | p{4cm} | p{4cm} | p{2cm} |}
+\hline
+Размерность матрицы (кв. корень) & Время работы последовательного алгоритма (в секундах) & Время работы параллельного алгоритма OMP (в секундах) & Время работы параллельного алгоритма TBB (в секундах) & Ускорение \\[5pt]
+\hline
+100     & 0.245 & 0.168   & 0.0962  & 1.1864       \\
+256     & 3.17  & 0.826   & 0.863   & 3.7554       \\
+625     & 42.5  & 10.5    & 10.5    & 4.0476       \\
+1000    & 174   & 43.5    & 43.9    & 3.9816       \\
+\hline
+\end{tabular}
+\end{table}
+
+\newpage
+
+% Выводы из результатов экспериментов
+\section*{Выводы из результатов экспериментов}
+\addcontentsline{toc}{section}{Выводы из результатов экспериментов}
+По данным, полученным в результате экспериментов, можно сделать вывод о том, что параллельные алгоритмы OpenMP и TBB работает быстрее, чем последовательный. При росте размерности матрицы можно заметить рост ускорения. Это означает, что чем больше размер умножаемых матриц,
+тем более быстро будет работать параллельный алгоритм относительно последовательного.
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+Таким образом, в рамках данной лабораторной работы были разработаны последовательный и параллельный алгоритмы для нахождения минимальной выпуклой оболочки компонент бинарного изображения. Одной из главных задач было сделать алгоритм паралллельным. Из нее также вытекает не менее главная задача достижения более быстрого выполенения параллельного алгоритма относительно последовательного. Проведенные тесты доказали, что программа верно вычисляет оболочку. А результаты вычислительных экспериментов доказывают, что обе поставленные задачи были выполнены.
+\newpage
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+\item Параллельные методы матричного умножения: \newline \url{https://intuit.ru/studies/courses/1156/190/lecture/4954?page=5}
+\item Параллельный алгоритм Кэннона: \newline \url{http://www.hpcc.unn.ru/?dir=883}
+\item Блочная матрица: \newline 
+\url{https://ru.wikipedia.org/wiki/%D0%91%D0%BB%D0%BE%D1%87%D0%BD%D0%B0%D1%8F_%D0%BC%D0%B0%D1%82%D1%80%D0%B8%D1%86%D0%B0}
+\item Блочные матрицы и кронекеровские произведение и сумма матриц: \newline 
+\url{http://mathhelpplanet.com/static.php?p=blochnye-matritsy}
+\item А.В. Сысоев, И.Б. Мееров, А.А. Сиднев «Средства разработки параллельных программ для систем с общей памятью. Библиотека Intel Threading Building Blocks». Нижний Новгород, 2007, 128 с. 
+\end{enumerate} 
+\newpage
+
+% Приложение
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+\textbf{Последовательная версия}
+\newline
+\newline matrix.h
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#ifndef MODULES_TASK_1_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+#define MODULES_TASK_1_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+#include <vector>
+#include <iostream>
+
+class Matrix {
+ public:
+    explicit Matrix(size_t size) :size(size) {
+        matrix.reserve(size);
+        for (size_t i(0); i < size; ++i) {
+            std::vector<double> vec(size);
+            matrix.push_back(vec);
+        }
+    }
+    Matrix(std::vector<std::vector<double>> matrix, size_t size) :size(size) {
+        this->matrix.reserve(size);
+        for (size_t i(0); i < size; ++i) {
+            std::vector<double> vec;
+            this->matrix.push_back(vec);
+        }
+        for (size_t i(0); i < size; ++i) {
+            this->matrix[i].assign(matrix[i].begin(), matrix[i].end());
+        }
+    }
+    ~Matrix() {}
+    std::vector<std::vector<double>> get_matrix() {
+        return matrix;
+    }
+    void generateMatrix(double num);
+    std::vector<std::vector<double>> multiplyByMatrix(Matrix matrix);
+    std::vector< std::vector<double>> cannonAlgorithmSeq(Matrix matrix2,
+    std::vector< std::vector<double>> res_matrix, size_t block_size,
+    size_t block_count);
+    void shiftLeft(std::vector< std::vector<double>> *matr, size_t pos,
+    size_t block_count, size_t skew);
+    void shiftUp(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count,
+    size_t skew);
+    void mutiplyByBlock(std::vector< std::vector<double>> block1,
+    std::vector< std::vector<double>> block2,
+    std::vector< std::vector<double>>* res_block,
+    size_t shift_l, size_t shift_r, size_t skew);
+
+ private:
+    size_t size;
+    std::vector<std::vector<double>> matrix;
+};
+#endif  // MODULES_TASK_1_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+\end{lstlisting}
+
+matrix.cpp
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#include "../../../modules/task_1/kolesnikov_i_Cannon_dense_matrix/matrix.h"
+
+void Matrix::generateMatrix(double num) {
+    for (size_t i = 0; i < size; ++i) {
+        for (size_t j = 0; j < size; ++j) {
+            matrix[i][j] = i*num;
+        }
+    }
+}
+
+std::vector< std::vector<double>> Matrix::multiplyByMatrix(Matrix matrix) {
+    Matrix res_matrix(size);
+    for (size_t i = 0; i < size; ++i) {
+        for (size_t j = 0; j < size; ++j) {
+            for (size_t k = 0; k < size; ++k) {
+                res_matrix.matrix[i][j] += this->matrix[i][k] * matrix.matrix[k][j];
+            }
+        }
+    }
+    return res_matrix.matrix;
+}
+
+void Matrix::shiftLeft(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count, size_t skew) {
+    std::vector< std::vector<double>> tmp_matr;
+
+    for (size_t i = 0; i < skew; ++i) {
+        std::vector<double> vec(skew);
+        tmp_matr.push_back(vec);
+        for (size_t j = 0; j < skew; ++j) {
+            tmp_matr[i][j] = matr->at(i + skew * pos).at(j);
+        }
+    }
+    for (size_t k = 0; k < block_count - 1; ++k) {
+        for (size_t i = 0; i < skew; ++i) {
+            for (size_t j = 0; j < skew; ++j) {
+                matr->at(i + skew * pos).at(j + skew * k) = matr->at(i + skew * pos).at(j + skew * (k + 1));
+            }
+        }
+    }
+    for (size_t i = 0; i < skew; ++i) {
+        for (size_t j = 0; j < skew; ++j) {
+            matr->at(i + skew * pos).at(j + skew * (block_count - 1)) = tmp_matr[i][j];
+        }
+    }
+}
+
+void Matrix::shiftUp(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count, size_t skew) {
+    std::vector< std::vector<double>> tmp_matr;
+
+    for (size_t i = 0; i < skew; ++i) {
+        std::vector<double> vec(skew);
+        tmp_matr.push_back(vec);
+        for (size_t j = 0; j < skew; ++j) {
+            tmp_matr[i][j] = matr->at(i).at(j + skew * pos);
+        }
+    }
+    for (size_t i = 0; i < block_count - 1; ++i) {
+        for (size_t j = 0; j < skew; ++j) {
+            for (size_t k = 0; k < skew; ++k) {
+                matr->at(j + skew * i).at(k + skew * pos) = matr->at(j + skew * (i + 1)).at(k + skew * pos);
+            }
+        }
+    }
+    for (size_t i = 0; i < skew; ++i) {
+        for (size_t j = 0; j < skew; ++j) {
+            matr->at(i + skew * (block_count - 1)).at(j + skew * pos) = tmp_matr[i][j];
+        }
+    }
+}
+
+void Matrix::mutiplyByBlock(std::vector< std::vector<double>> block1,
+std::vector< std::vector<double>> block2, std::vector< std::vector<double>> *res_block,
+size_t shift_l, size_t shift_r, size_t skew) {
+    for (size_t i = 0; i < skew; i++)
+        for (size_t j = 0; j < skew; j++)
+            for (size_t k = 0; k < skew; k++)
+                res_block->at(i + skew * shift_l).at(j + skew * shift_r) +=
+                block1[i + skew * shift_l][skew * shift_r + k] *
+                block2[k + skew * shift_l][j + skew * shift_r];
+}
+
+std::vector< std::vector<double>> Matrix::cannonAlgorithmSeq(Matrix matrix2,
+std::vector< std::vector<double>> res_matrix, size_t block_size,
+size_t block_count) {
+    for (size_t i = 1; i < block_count; ++i) {
+        for (size_t j = 0; j < i; ++j) {
+            shiftLeft(&this->matrix, i, block_count, block_size);
+            shiftUp(&matrix2.matrix, i, block_count, block_size);
+        }
+    }
+    for (size_t i = 0; i < block_count; ++i) {
+        for (size_t j = 0; j < block_count; ++j) {
+            for (size_t k = 0; k < block_count; ++k) {
+                mutiplyByBlock(this->matrix, matrix2.matrix, &res_matrix, j, k, block_size);
+            }
+        }
+        for (size_t l = 0; l < block_count; ++l) {
+            shiftLeft(&this->matrix, l, block_count, block_size);
+            shiftUp(&matrix2.matrix, l, block_count, block_size);
+        }
+    }
+    return res_matrix;
+}
+\end{lstlisting}
+
+main.cpp
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#include <gtest/gtest.h>
+#include "./matrix.h"
+
+TEST(CannonTest, test_1) {
+    size_t size = 16;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/4;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+
+    Matrix matrix3(matrix1.multiplyByMatrix(matrix2), size);
+
+    Matrix matrix4(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    ASSERT_DOUBLE_EQ(matr1[1][1], matr2[1][1]);
+}
+TEST(CannonTest, test_2) {
+    size_t size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/2;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+
+    Matrix matrix3(matrix1.multiplyByMatrix(matrix2), size);
+    Matrix matrix4(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+    ASSERT_DOUBLE_EQ(matr1[0][0], matr2[0][0]);
+}
+
+TEST(CannonTest, test_3) {
+    size_t size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/2;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+
+    Matrix matrix3(matrix1.multiplyByMatrix(matrix2), size);
+    Matrix matrix4(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    ASSERT_DOUBLE_EQ(matr1[size - 1][size - 1], matr2[size - 1][size - 1]);
+}
+
+TEST(CannonTest, test_4) {
+    size_t size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/2;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+
+    Matrix matrix3(matrix1.multiplyByMatrix(matrix2), size);
+    Matrix matrix4(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    for (size_t j(0); j < size; ++j) {
+        ASSERT_DOUBLE_EQ(matr1[0][j], matr2[0][j]);
+    }
+}
+
+TEST(CannonTest, test_5) {
+    size_t size = 9;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/3;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+
+    Matrix matrix3(matrix1.multiplyByMatrix(matrix2), size);
+    Matrix matrix4(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    for (size_t i(0); i < size; ++i) {
+        for (size_t j(0); j < size; ++j) {
+            ASSERT_DOUBLE_EQ(matr1[i][j], matr2[i][j]);
+        }
+    }
+}
+\end{lstlisting}
+
+\textbf{OpenMP версия}
+\newline
+\newline matrix.h
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#ifndef MODULES_TASK_2_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+#define MODULES_TASK_2_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+#include <omp.h>
+#include <vector>
+#include <iostream>
+
+class Matrix {
+ public:
+    explicit Matrix(int size) :size(size) {
+        matrix.reserve(size);
+        for (int i(0); i < size; ++i) {
+            std::vector<double> vec(size);
+            matrix.push_back(vec);
+        }
+    }
+    Matrix(std::vector<std::vector<double>> matrix, int size) :size(size) {
+        this->matrix.reserve(size);
+        for (int i(0); i < size; ++i) {
+            std::vector<double> vec;
+            this->matrix.push_back(vec);
+        }
+        for (int i(0); i < size; ++i) {
+            this->matrix[i].assign(matrix[i].begin(), matrix[i].end());
+        }
+    }
+    ~Matrix() {}
+    std::vector<std::vector<double>> get_matrix() {
+        return matrix;
+    }
+    void generateMatrix(double num);
+    std::vector< std::vector<double>> cannonAlgorithmSeq(Matrix matrix2,
+    std::vector< std::vector<double>> res_matrix, int block_size,
+    int block_count);
+    std::vector< std::vector<double>> cannonAlgorithmOMP(Matrix matrix2,
+    int thread_nums, std::vector< std::vector<double>> res_matrix,
+    int block_size, int block_count);
+    void shiftLeft(std::vector< std::vector<double>> *matr, int pos,
+    int block_count, int skew);
+    void shiftUp(std::vector< std::vector<double>> *matr, int pos, int block_count,
+    int skew);
+    void mutiplyByBlock(std::vector< std::vector<double>> block1,
+    std::vector< std::vector<double>> block2,
+    std::vector< std::vector<double>>* res_block,
+    int shift_l, int shift_r, int skew);
+
+ private:
+    int size;
+    std::vector<std::vector<double>> matrix;
+};
+#endif  // MODULES_TASK_2_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+\end{lstlisting}
+
+matrix.cpp
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#include "../../../modules/task_2/kolesnikov_i_Cannon_dense_matrix/matrix.h"
+
+void Matrix::generateMatrix(double num) {
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            matrix[i][j] = i*num;
+        }
+    }
+}
+
+void Matrix::shiftLeft(std::vector< std::vector<double>> *matr, int pos, int block_count, int skew) {
+    std::vector< std::vector<double>> tmp_matr;
+
+    for (int i = 0; i < skew; ++i) {
+        std::vector<double> vec(skew);
+        tmp_matr.push_back(vec);
+        for (int j = 0; j < skew; ++j) {
+            tmp_matr[i][j] = matr->at(i + skew * pos).at(j);
+        }
+    }
+    for (int k = 0; k < block_count - 1; ++k) {
+        for (int i = 0; i < skew; ++i) {
+            for (int j = 0; j < skew; ++j) {
+                matr->at(i + skew * pos).at(j + skew * k) = matr->at(i + skew * pos).at(j + skew * (k + 1));
+            }
+        }
+    }
+    for (int i = 0; i < skew; ++i) {
+        for (int j = 0; j < skew; ++j) {
+            matr->at(i + skew * pos).at(j + skew * (block_count - 1)) = tmp_matr[i][j];
+        }
+    }
+}
+
+void Matrix::shiftUp(std::vector< std::vector<double>> *matr, int pos, int block_count, int skew) {
+    std::vector< std::vector<double>> tmp_matr;
+
+    for (int i = 0; i < skew; ++i) {
+        std::vector<double> vec(skew);
+        tmp_matr.push_back(vec);
+        for (int j = 0; j < skew; ++j) {
+            tmp_matr[i][j] = matr->at(i).at(j + skew * pos);
+        }
+    }
+    for (int i = 0; i < block_count - 1; ++i) {
+        for (int j = 0; j < skew; ++j) {
+            for (int k = 0; k < skew; ++k) {
+                matr->at(j + skew * i).at(k + skew * pos) = matr->at(j + skew * (i + 1)).at(k + skew * pos);
+            }
+        }
+    }
+    for (int i = 0; i < skew; ++i) {
+        for (int j = 0; j < skew; ++j) {
+            matr->at(i + skew * (block_count - 1)).at(j + skew * pos) = tmp_matr[i][j];
+        }
+    }
+}
+
+void Matrix::mutiplyByBlock(std::vector< std::vector<double>> block1,
+std::vector< std::vector<double>> block2, std::vector< std::vector<double>> *res_block,
+int shift_l, int shift_r, int skew) {
+    for (int i = 0; i < skew; i++)
+        for (int j = 0; j < skew; j++)
+            for (int k = 0; k < skew; k++)
+                res_block->at(i + skew * shift_l).at(j + skew * shift_r) +=
+                block1[i + skew * shift_l][skew * shift_r + k] *
+                block2[k + skew * shift_l][j + skew * shift_r];
+}
+
+std::vector< std::vector<double>> Matrix::cannonAlgorithmSeq(Matrix matrix2,
+std::vector< std::vector<double>> res_matrix, int block_size,
+int block_count) {
+    for (int i = 1; i < block_count; ++i) {
+        for (int j = 0; j < i; ++j) {
+            shiftLeft(&this->matrix, i, block_count, block_size);
+            shiftUp(&matrix2.matrix, i, block_count, block_size);
+        }
+    }
+    for (int i = 0; i < block_count; ++i) {
+        for (int j = 0; j < block_count; ++j) {
+            for (int k = 0; k < block_count; ++k) {
+                mutiplyByBlock(this->matrix, matrix2.matrix, &res_matrix, j, k, block_size);
+            }
+        }
+        for (int l = 0; l < block_count; ++l) {
+            shiftLeft(&this->matrix, l, block_count, block_size);
+            shiftUp(&matrix2.matrix, l, block_count, block_size);
+        }
+    }
+    return res_matrix;
+}
+
+std::vector< std::vector<double>> Matrix::cannonAlgorithmOMP(Matrix matrix2,
+int thread_nums, std::vector< std::vector<double>> res_matrix,
+int block_size, int block_count) {
+    int i, j, k, l;
+    int num_threads = thread_nums;
+#pragma omp parallel shared(matrix2) private(i, j)
+    {
+        #pragma omp for schedule(static)
+        for (i = 1; i < block_count; ++i) {
+            for (j = 0; j < i; ++j) {
+                shiftLeft(&this->matrix, i, block_count, block_size);
+                shiftUp(&matrix2.matrix, i, block_count, block_size);
+            }
+        }
+    }
+    for (i = 0; i < block_count; ++i) {
+#pragma omp parallel num_threads(num_threads) private(j, k, i, l) shared(matrix2, res_matrix)
+        {
+            #pragma omp for schedule(static)
+            for (j = 0; j < block_count; ++j) {
+                for (k = 0; k < block_count; ++k) {
+                    mutiplyByBlock(this->matrix, matrix2.matrix, &res_matrix, j, k, block_size);
+                }
+            }
+            #pragma omp for schedule(static)
+            for (l = 0; l < block_count; ++l) {
+                shiftLeft(&this->matrix, l, block_count, block_size);
+                shiftUp(&matrix2.matrix, l, block_count, block_size);
+            }
+        }
+    }
+    return res_matrix;
+}
+\end{lstlisting}
+main.cpp
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#include <gtest/gtest.h>
+#include "./matrix.h"
+
+TEST(CannonTest, test_1) {
+    int size = 16;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    int block_size = size/4;
+    int block_count = size / block_size;
+
+    for (int i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (int j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmOMP(matrix2, 4, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    ASSERT_DOUBLE_EQ(matr1[1][1], matr2[1][1]);
+}
+
+
+TEST(CannonTest, test_2) {
+    int size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    int block_size = size/2;
+    int block_count = size / block_size;
+
+    for (int i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (int j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmOMP(matrix2, 2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+    ASSERT_DOUBLE_EQ(matr1[0][0], matr2[0][0]);
+}
+
+TEST(CannonTest, test_3) {
+    int size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    int block_size = size/2;
+    int block_count = size / block_size;
+
+    for (int i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (int j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmOMP(matrix2, 2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+    ASSERT_DOUBLE_EQ(matr1[size - 1][size - 1], matr2[size - 1][size - 1]);
+}
+
+TEST(CannonTest, test_4) {
+    int size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    int block_size = size/2;
+    int block_count = size / block_size;
+
+    for (int i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (int j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmOMP(matrix2, 2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    for (int j(0); j < size; ++j) {
+        ASSERT_DOUBLE_EQ(matr1[0][j], matr2[0][j]);
+    }
+}
+
+TEST(CannonTest, test_5) {
+    int size = 9;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    int block_size = size/3;
+    int block_count = size / block_size;
+
+    for (int i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (int j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmOMP(matrix2, 3, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    for (int i(0); i < size; ++i) {
+        for (int j(0); j < size; ++j) {
+            ASSERT_DOUBLE_EQ(matr1[i][j], matr2[i][j]);
+        }
+    }
+}
+\end{lstlisting}
+
+\textbf{TBB версия}
+\newline
+\newline matrix.h
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#ifndef MODULES_TASK_3_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+#define MODULES_TASK_3_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+#include <vector>
+#include <iostream>
+#include "tbb/tbb.h"
+
+class Matrix {
+ public:
+    explicit Matrix(size_t size) :size(size) {
+        matrix.reserve(size);
+        for (size_t i(0); i < size; ++i) {
+            std::vector<double> vec(size);
+            matrix.push_back(vec);
+        }
+    }
+    Matrix(std::vector<std::vector<double>> matrix, size_t size) :size(size) {
+        this->matrix.reserve(size);
+        for (size_t i(0); i < size; ++i) {
+            std::vector<double> vec;
+            this->matrix.push_back(vec);
+        }
+        for (size_t i(0); i < size; ++i) {
+            this->matrix[i].assign(matrix[i].begin(), matrix[i].end());
+        }
+    }
+    ~Matrix() {}
+    std::vector<std::vector<double>> get_matrix() {
+        return matrix;
+    }
+    void generateMatrix(double num);
+    std::vector< std::vector<double>> cannonAlgorithmSeq(Matrix matrix2,
+    std::vector< std::vector<double>> res_matrix, size_t block_size,
+    size_t block_count);
+    std::vector< std::vector<double>> cannonAlgorithmTBB(Matrix matrix2,
+    std::vector< std::vector<double>> res_matrix, size_t block_size,
+    size_t block_count);
+    void shiftLeft(std::vector< std::vector<double>> *matr, size_t pos,
+    size_t block_count, size_t skew);
+    void shiftUp(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count,
+    size_t skew);
+    void mutiplyByBlock(std::vector< std::vector<double>> block1,
+    std::vector< std::vector<double>> block2,
+    std::vector< std::vector<double>>* res_block,
+    size_t shift_l, size_t shift_r, size_t skew);
+
+ private:
+    size_t size;
+    std::vector<std::vector<double>> matrix;
+};
+#endif  // MODULES_TASK_3_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
+\end{lstlisting}
+
+matrix.cpp
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#include "../../../modules/task_3/kolesnikov_i_Cannon_dense_matrix/matrix.h"
+
+void Matrix::generateMatrix(double num) {
+    for (size_t i = 0; i < size; ++i) {
+        for (size_t j = 0; j < size; ++j) {
+            matrix[i][j] = i*num;
+        }
+    }
+}
+
+void Matrix::shiftLeft(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count, size_t skew) {
+    std::vector< std::vector<double>> tmp_matr;
+
+    for (size_t i = 0; i < skew; ++i) {
+        std::vector<double> vec(skew);
+        tmp_matr.push_back(vec);
+        for (size_t j = 0; j < skew; ++j) {
+            tmp_matr[i][j] = matr->at(i + skew * pos).at(j);
+        }
+    }
+    for (size_t k = 0; k < block_count - 1; ++k) {
+        for (size_t i = 0; i < skew; ++i) {
+            for (size_t j = 0; j < skew; ++j) {
+                matr->at(i + skew * pos).at(j + skew * k) = matr->at(i + skew * pos).at(j + skew * (k + 1));
+            }
+        }
+    }
+    for (size_t i = 0; i < skew; ++i) {
+        for (size_t j = 0; j < skew; ++j) {
+            matr->at(i + skew * pos).at(j + skew * (block_count - 1)) = tmp_matr[i][j];
+        }
+    }
+}
+
+void Matrix::shiftUp(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count, size_t skew) {
+    std::vector< std::vector<double>> tmp_matr;
+
+    for (size_t i = 0; i < skew; ++i) {
+        std::vector<double> vec(skew);
+        tmp_matr.push_back(vec);
+        for (size_t j = 0; j < skew; ++j) {
+            tmp_matr[i][j] = matr->at(i).at(j + skew * pos);
+        }
+    }
+    for (size_t i = 0; i < block_count - 1; ++i) {
+        for (size_t j = 0; j < skew; ++j) {
+            for (size_t k = 0; k < skew; ++k) {
+                matr->at(j + skew * i).at(k + skew * pos) = matr->at(j + skew * (i + 1)).at(k + skew * pos);
+            }
+        }
+    }
+    for (size_t i = 0; i < skew; ++i) {
+        for (size_t j = 0; j < skew; ++j) {
+            matr->at(i + skew * (block_count - 1)).at(j + skew * pos) = tmp_matr[i][j];
+        }
+    }
+}
+
+void Matrix::mutiplyByBlock(std::vector< std::vector<double>> block1,
+std::vector< std::vector<double>> block2, std::vector< std::vector<double>> *res_block,
+size_t shift_l, size_t shift_r, size_t skew) {
+    for (size_t i = 0; i < skew; i++)
+        for (size_t j = 0; j < skew; j++)
+            for (size_t k = 0; k < skew; k++)
+                res_block->at(i + skew * shift_l).at(j + skew * shift_r) +=
+                block1[i + skew * shift_l][skew * shift_r + k] *
+                block2[k + skew * shift_l][j + skew * shift_r];
+}
+
+std::vector< std::vector<double>> Matrix::cannonAlgorithmSeq(Matrix matrix2,
+std::vector< std::vector<double>> res_matrix, size_t block_size,
+size_t block_count) {
+    for (size_t i = 1; i < block_count; ++i) {
+        for (size_t j = 0; j < i; ++j) {
+            shiftLeft(&this->matrix, i, block_count, block_size);
+            shiftUp(&matrix2.matrix, i, block_count, block_size);
+        }
+    }
+    for (size_t i = 0; i < block_count; ++i) {
+        for (size_t j = 0; j < block_count; ++j) {
+            for (size_t k = 0; k < block_count; ++k) {
+                mutiplyByBlock(this->matrix, matrix2.matrix, &res_matrix, j, k, block_size);
+            }
+        }
+        for (size_t l = 0; l < block_count; ++l) {
+            shiftLeft(&this->matrix, l, block_count, block_size);
+            shiftUp(&matrix2.matrix, l, block_count, block_size);
+        }
+    }
+    return res_matrix;
+}
+
+std::vector< std::vector<double>> Matrix::cannonAlgorithmTBB(Matrix matrix2,
+std::vector< std::vector<double>> res_matrix, size_t block_size,
+size_t block_count) {
+    tbb::parallel_for(tbb::blocked_range<size_t>(1, block_count), [&](const tbb::blocked_range<size_t>& range) {
+        for (size_t i = range.begin(); i < range.end(); ++i) {
+            for (size_t j = 0; j < i; ++j) {
+                shiftLeft(&this->matrix, i, block_count, block_size);
+                shiftUp(&matrix2.matrix, i, block_count, block_size);
+            }
+        }
+    });
+    for (size_t i = 0; i < block_count; ++i) {
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, block_count), [&](const tbb::blocked_range<size_t>& range) {
+            for (size_t j = range.begin(); j < range.end(); ++j) {
+                for (size_t k = 0; k < block_count; ++k) {
+                    mutiplyByBlock(this->matrix, matrix2.matrix, &res_matrix, j, k, block_size);
+                }
+            }
+        });
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, block_count), [&](const tbb::blocked_range<size_t>& range) {
+            for (size_t l = range.begin(); l < range.end(); ++l) {
+                shiftLeft(&this->matrix, l, block_count, block_size);
+                shiftUp(&matrix2.matrix, l, block_count, block_size);
+            }
+        });
+    }
+    return res_matrix;
+}
+\end{lstlisting}
+
+main.cpp
+\begin{lstlisting}
+// Copyright 2022 Kolesnikov Ilya
+#include <gtest/gtest.h>
+#include "./matrix.h"
+
+TEST(CannonTest, test_1) {
+    size_t size = 16;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/4;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmTBB(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    ASSERT_DOUBLE_EQ(matr1[1][1], matr2[1][1]);
+}
+
+
+TEST(CannonTest, test_2) {
+    size_t size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/2;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmTBB(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+    ASSERT_DOUBLE_EQ(matr1[0][0], matr2[0][0]);
+}
+
+TEST(CannonTest, test_3) {
+    size_t size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/2;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmTBB(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+    ASSERT_DOUBLE_EQ(matr1[size - 1][size - 1], matr2[size - 1][size - 1]);
+}
+
+TEST(CannonTest, test_4) {
+    size_t size = 4;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/2;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmTBB(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    for (size_t j(0); j < size; ++j) {
+        ASSERT_DOUBLE_EQ(matr1[0][j], matr2[0][j]);
+    }
+}
+
+TEST(CannonTest, test_5) {
+    size_t size = 9;
+    Matrix matrix1(size);
+    Matrix matrix2(size);
+    std::vector< std::vector<double>> res_matrix;
+    size_t block_size = size/3;
+    size_t block_count = size / block_size;
+
+    for (size_t i = 0; i < size; ++i) {
+        std::vector<double> vec(size);
+        res_matrix.push_back(vec);
+        for (size_t j = 0; j < size; ++j) {
+            res_matrix[i][j] = 0;
+        }
+    }
+
+    double num1 = 1.076, num2 = 2.067;
+    matrix1.generateMatrix(num1);
+    matrix2.generateMatrix(num2);
+    Matrix matrix1_copy2(matrix1.get_matrix(), size);
+
+    Matrix matrix3(matrix1.cannonAlgorithmSeq(matrix2, res_matrix, block_size, block_count), size);
+    Matrix matrix4(matrix1_copy2.cannonAlgorithmTBB(matrix2, res_matrix, block_size, block_count), size);
+
+    std::vector<std::vector<double>> matr1 = matrix3.get_matrix(), matr2 = matrix4.get_matrix();
+
+    for (size_t i(0); i < size; ++i) {
+        for (size_t j(0); j < size; ++j) {
+            ASSERT_DOUBLE_EQ(matr1[i][j], matr2[i][j]);
+        }
+    }
+}
+\end{lstlisting}
+
+\end{document}
