@@ -70,9 +70,20 @@
 \newlength{\maxl}
 \setlength{\maxl}{\wd\lbox}
 \hfill\parbox{7cm}{
-\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнила:} \\ студент группы 381906-3 \\ Колесников И. В.\\
-\\
-\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ доцент кафедры МОСТ, \\ кандидат технических наук \\ Сысоев А. В.\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} 
+
+студент группы 381906-3 
+
+Колесников И. В.
+
+
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}
+
+доцент кафедры МОСТ, 
+
+кандидат технических наук 
+
+Сысоев А. В.
 }
 \vspace{\fill}
 
@@ -90,9 +101,9 @@
 \section*{Введение}
 \addcontentsline{toc}{section}{Введение}
 \par 
-Блочная матрица А — представление матрицы, при котором она рассекается вертикальными и горизонтальными линиями на прямоугольные части — блоки. Элементами блочной матрицы A являются матрицы $A_{ij}$ размеров $m_i\times n_j, i=1,2,\ldots,p, j=1,2,\ldots,q$, причем: $m_1+m_2+\ldots+m_p=m и n_1+n_2+\ldots+n_q=n.$
+Блочная матрица А — представление матрицы, при котором она рассекается вертикальными и горизонтальными линиями на прямоугольные части — блоки. Элементами блочной матрицы A являются матрицы $A_{ij}$ размеров $m_{i}$ х $n_{j}$,  i=1,2,...,p, j=1,2,...,q, причем: $m_{1}$+$m_{2}$+...+$m_{p}$=m и $n_{1}$+$n_{2}$+...+$n_{q}$=n.
 
-Операции с блочными матрицами выполняются по тем же правилам, что и с числовыми матрицами. Если числовые матрицы A и B равных размеров одинаково разбиты на блоки A=\begin{pmatrix}A_{ij}\end{pmatrix} и B=\begin{pmatrix}B_{ij}\end{pmatrix}, то их сумму C=A+B можно аналогичным образом разбить на блоки C=\begin{pmatrix}C_{ij}\end{pmatrix}, причем для каждого блока $C_{ij}=A_{ij}+B_{ij}$. Если блочную матрицу A=\begin{pmatrix}A_{ij}\end{pmatrix} умножить на число $\lambda$, то получим матрицу $\lambda A=A\lambda=\begin{pmatrix}\lambda A_{ij}\end{pmatrix}$. 
+Операции с блочными матрицами выполняются по тем же правилам, что и с числовыми матрицами. Если числовые матрицы A и B равных размеров одинаково разбиты на блоки $A=\begin{pmatrix}A_{ij}\end{pmatrix}$ и $B=\begin{pmatrix}B_{ij}\end{pmatrix}$, то их сумму C=A+B можно аналогичным образом разбить на блоки $C=\begin{pmatrix}C_{ij}\end{pmatrix}$, причем для каждого блока $C_{ij}=A_{ij}+B_{ij}$. Если блочную матрицу $A=\begin{pmatrix}A_{ij}\end{pmatrix}$ умножить на число $\lambda$, то получим матрицу $\lambda A=A\lambda=\begin{pmatrix}\lambda A_{ij}\end{pmatrix}$. 
 
 Алгоритм Кэннона — это алгоритм, предотвращающий обмен данными, который превращает каждую входную матрицу в блочную матрицу, элементами которой являются подматрицы. Затем используется наивный алгоритм над блоками матриц, вычисляющий произведение подматриц полностью в быстрой памяти. 
 \newpage
@@ -188,7 +199,7 @@ void mutiplyByBlock(std::vector< std::vector<double>> block1, std::vector< std::
 \addcontentsline{toc}{section}{Результаты экспериментов}
 Вычислительные эксперименты для оценки эффективности работы параллельных алгоритмов проводились на ПК со следующими характеристиками:
 \begin{itemize}
-\item Процессор: AMD Ryzen 3 2200G with Radeon Vega Graphics 3.50 GHz, количество ядер - 4;
+\item Процессор: AMD Ryzen 3 2200G 3.50 GHz, количество ядер - 4;
 \item Оперативная память: 16 ГБ (DDR4), 3200 МГц;
 \item Операционная система: Windows 10 Home.
 \end{itemize}
@@ -200,14 +211,13 @@ void mutiplyByBlock(std::vector< std::vector<double>> block1, std::vector< std::
 \begin{table}[!h]
 \caption{Результаты вычислительных экспериментов}
 \centering
-\begin{tabular}{| p{3cm} | p{3cm} | p{4cm} | p{4cm} | p{2cm} |}
+\begin{tabular}{| p{3cm} | p{4cm} | p{2cm} | p{2cm} | p{2cm} |} 
 \hline
-Размерность матрицы (кв. корень) & Время работы последовательного алгоритма (в секундах) & Время работы параллельного алгоритма OMP (в секундах) & Время работы параллельного алгоритма TBB (в секундах) & Ускорение \\[5pt]
-\hline
-100     & 0.245 & 0.168   & 0.0962  & 1.1864       \\
-256     & 3.17  & 0.826   & 0.863   & 3.7554       \\
-625     & 42.5  & 10.5    & 10.5    & 4.0476       \\
-1000    & 174   & 43.5    & 43.9    & 3.9816       \\
+Размерность & Последовательный & OMP & TBB & Ускорение \\ \hline
+100 & 0.245 & 0.168 & 0.0962 & 1.1864 \\ \hline
+256 & 3.17 & 0.826 & 0.863 & 3.7554 \\ \hline
+625 & 42.5 & 10.5 & 10.5 & 4.0476 \\ \hline
+1000 & 174 & 43.5 & 43.9 & 3.9816 \\
 \hline
 \end{tabular}
 \end{table}
@@ -233,8 +243,10 @@ void mutiplyByBlock(std::vector< std::vector<double>> block1, std::vector< std::
 \begin{enumerate}
 \item Параллельные методы матричного умножения: \newline \url{https://intuit.ru/studies/courses/1156/190/lecture/4954?page=5}
 \item Параллельный алгоритм Кэннона: \newline \url{http://www.hpcc.unn.ru/?dir=883}
-\item Блочная матрица: \newline 
-\url{https://ru.wikipedia.org/wiki/%D0%91%D0%BB%D0%BE%D1%87%D0%BD%D0%B0%D1%8F_%D0%BC%D0%B0%D1%82%D1%80%D0%B8%D1%86%D0%B0}
+\item Блочная матрица: 
+
+\url{https://clck.ru/ghScB}
+
 \item Блочные матрицы и кронекеровские произведение и сумма матриц: \newline 
 \url{http://mathhelpplanet.com/static.php?p=blochnye-matritsy}
 \item А.В. Сысоев, И.Б. Мееров, А.А. Сиднев «Средства разработки параллельных программ для систем с общей памятью. Библиотека Intel Threading Building Blocks». Нижний Новгород, 2007, 128 с. 
@@ -245,8 +257,9 @@ void mutiplyByBlock(std::vector< std::vector<double>> block1, std::vector< std::
 \section*{Приложение}
 \addcontentsline{toc}{section}{Приложение}
 \textbf{Последовательная версия}
-\newline
-\newline matrix.h
+
+
+matrix.h
 \begin{lstlisting}
 // Copyright 2022 Kolesnikov Ilya
 #ifndef MODULES_TASK_1_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
@@ -558,8 +571,9 @@ TEST(CannonTest, test_5) {
 \end{lstlisting}
 
 \textbf{OpenMP версия}
-\newline
-\newline matrix.h
+
+
+matrix.h
 \begin{lstlisting}
 // Copyright 2022 Kolesnikov Ilya
 #ifndef MODULES_TASK_2_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
@@ -901,8 +915,9 @@ TEST(CannonTest, test_5) {
 \end{lstlisting}
 
 \textbf{TBB версия}
-\newline
-\newline matrix.h
+
+
+matrix.h
 \begin{lstlisting}
 // Copyright 2022 Kolesnikov Ilya
 #ifndef MODULES_TASK_3_KOLESNIKOV_I_CANNON_DENSE_MATRIX_MATRIX_H_
